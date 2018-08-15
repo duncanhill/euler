@@ -1,0 +1,78 @@
+package main
+
+import "fmt"
+
+func main() {
+	num := 600851475143
+	p := NewPrimes()
+
+	largest := 0
+	for num > 1 {
+		i := 0
+		prime := p.At(i)
+
+		// Find the next prime that acts as a divisor.
+		for num%prime != 0 {
+			i++
+			prime = p.At(i)
+		}
+
+		// Divide it out of the number.
+		num /= prime
+
+		// If it's the largest we've seen, record it as such.
+		if prime > largest {
+			largest = prime
+		}
+	}
+
+	fmt.Println(largest)
+}
+
+type Primes struct {
+	primes []int
+	facts  map[int][]int
+	next   int
+}
+
+func NewPrimes() *Primes {
+	p := new(Primes)
+	p.primes = make([]int, 1)
+	p.facts = make(map[int][]int)
+
+	// Initialize with knowledge of the first prime: 2.
+	p.primes[0] = 2
+	p.facts[4] = []int{2}
+	p.next = 3
+
+	return p
+}
+
+func (p *Primes) At(index int) int {
+	if index >= len(p.primes) { // Not found.
+		// The following is an incremental Sieve of Eratosthenes.
+		for len(p.primes) <= index {
+			considering := p.next
+			facts := p.facts[considering]
+
+			if facts != nil { // Not a prime; redistribute facts.
+				for _, fact := range facts {
+					new := considering + fact
+
+					if p.facts[new] != nil {
+						p.facts[new] = append(p.facts[new], fact)
+					} else {
+						p.facts[new] = []int{fact}
+					}
+				}
+			} else { // Prime; append the prime.
+				p.primes = append(p.primes, considering)
+				p.facts[considering*considering] = []int{considering}
+			}
+
+			p.next++
+		}
+	}
+
+	return p.primes[index]
+}
